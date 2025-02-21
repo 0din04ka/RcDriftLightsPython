@@ -2,7 +2,7 @@ import sys
 import time
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 from PyQt5.QtCore import QThread, pyqtSignal
-from smbus2 import SMBus
+from smbus2 import SMBus, i2c_msg
 import VL53L0X
 
 # Адрес мультиплексора TCA9548A
@@ -33,22 +33,25 @@ class SensorThread(QThread):
 
         try:
             while self.running:
-                # Чтение данных с порта 0
-                select_port(bus, 0)
-                tof0.start_ranging()  # По умолчанию используется хороший режим точности
-                distance0 = tof0.get_distance()
-                tof0.stop_ranging()
+                try:
+                    # Чтение данных с порта 0
+                    select_port(bus, 0)
+                    tof0.start_ranging()  # По умолчанию используется хороший режим точности
+                    distance0 = tof0.get_distance()
+                    tof0.stop_ranging()
 
-                # Чтение данных с порта 2
-                select_port(bus, 2)
-                tof2.start_ranging()  # По умолчанию используется хороший режим точности
-                distance2 = tof2.get_distance()
-                tof2.stop_ranging()
+                    # Чтение данных с порта 2
+                    select_port(bus, 2)
+                    tof2.start_ranging()  # По умолчанию используется хороший режим точности
+                    distance2 = tof2.get_distance()
+                    tof2.stop_ranging()
 
-                # Вывод данных в консоль и отправка сигнала в интерфейс
-                result = f"Порт 0: {distance0} мм, Порт 2: {distance2} мм"
-                print(result)
-                self.update_signal.emit(result)
+                    # Вывод данных в консоль и отправка сигнала в интерфейс
+                    result = f"Порт 0: {distance0} мм, Порт 2: {distance2} мм"
+                    print(result)
+                    self.update_signal.emit(result)
+                except Exception as e:
+                    print(f"Ошибка при чтении данных: {e}")
 
                 time.sleep(0.1)  # Задержка между измерениями
         finally:
