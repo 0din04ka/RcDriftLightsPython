@@ -26,6 +26,8 @@ class SensorThread(QThread):
     def run(self):
         self.running = True
         bus = SMBus(1)  # Используем I2C шину 1
+
+        # Инициализация датчиков
         tof0 = VL53L0X.VL53L0X(i2c_bus=bus, i2c_address=0x29)
         tof2 = VL53L0X.VL53L0X(i2c_bus=bus, i2c_address=0x29)
 
@@ -33,13 +35,13 @@ class SensorThread(QThread):
             while self.running:
                 # Чтение данных с порта 0
                 select_port(bus, 0)
-                tof0.start_ranging(VL53L0X.VL53L0X_BETTER_ACCURACY_MODE)
+                tof0.start_ranging(VL53L0X.VL53L0X_GOOD_ACCURACY_MODE)
                 distance0 = tof0.get_distance()
                 tof0.stop_ranging()
 
                 # Чтение данных с порта 2
                 select_port(bus, 2)
-                tof2.start_ranging(VL53L0X.VL53L0X_BETTER_ACCURACY_MODE)
+                tof2.start_ranging(VL53L0X.VL53L0X_GOOD_ACCURACY_MODE)
                 distance2 = tof2.get_distance()
                 tof2.stop_ranging()
 
