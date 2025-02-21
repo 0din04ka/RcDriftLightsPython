@@ -35,13 +35,13 @@ class SensorThread(QThread):
             while self.running:
                 # Чтение данных с порта 0
                 select_port(bus, 0)
-                tof0.start_ranging(VL53L0X.VL53L0X_GOOD_ACCURACY_MODE)
+                tof0.start_ranging()  # По умолчанию используется хороший режим точности
                 distance0 = tof0.get_distance()
                 tof0.stop_ranging()
 
                 # Чтение данных с порта 2
                 select_port(bus, 2)
-                tof2.start_ranging(VL53L0X.VL53L0X_GOOD_ACCURACY_MODE)
+                tof2.start_ranging()  # По умолчанию используется хороший режим точности
                 distance2 = tof2.get_distance()
                 tof2.stop_ranging()
 
