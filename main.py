@@ -2,11 +2,18 @@ import sys
 import time
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 from PyQt5.QtCore import QThread, pyqtSignal
-from smbus2 import SMBus
+from smbus2 import SMBus, i2c_msg
 import VL53L0X
 
-# Адреса датчиков
-SENSOR_ADDRESSES = [0x30, 0x31]  # Уникальные адреса для каждого датчика
+# Адрес мультиплексора TCA9548A
+TCA9548A_ADDRESS = 0x70
+
+# Функция для выбора порта на мультиплексоре
+def select_port(bus, port):
+    if 0 <= port <= 7:
+        bus.write_byte(TCA9548A_ADDRESS, 1 << port)
+    else:
+        raise ValueError("Порт должен быть от 0 до 7")
 
 # Класс для работы с датчиками в отдельном потоке
 class SensorThread(QThread):
@@ -20,25 +27,27 @@ class SensorThread(QThread):
         self.running = True
         bus = SMBus(1)  # Используем I2C шину 1
 
-        # Инициализация датчиков с разными адресами
-        tof0 = VL53L0X.VL53L0X(i2c_bus=bus, i2c_address=SENSOR_ADDRESSES[0])
-        tof1 = VL53L0X.VL53L0X(i2c_bus=bus, i2c_address=SENSOR_ADDRESSES[1])
+        # Инициализация датчиков
+        tof0 = VL53L0X.VL53L0X(i2c_bus=bus, i2c_address=0x29)
+        tof2 = VL53L0X.VL53L0X(i2c_bus=bus, i2c_address=0x29)
 
         try:
             while self.running:
                 try:
-                    # Чтение данных с первого датчика
-                    tof0.start_ranging()
+                    # Чтение данных с порта 0
+                    select_port(bus, 0)
+                    tof0.start_ranging()  # По умолчанию используется хороший режим точности
                     distance0 = tof0.get_distance()
                     tof0.stop_ranging()
 
-                    # Чтение данных со второго датчика
-                    tof1.start_ranging()
-                    distance1 = tof1.get_distance()
-                    tof1.stop_ranging()
+                    # Чтение данных с порта 2
+                    select_port(bus, 2)
+                    tof2.start_ranging()  # По умолчанию используется хороший режим точности
+                    distance2 = tof2.get_distance()
+                    tof2.stop_ranging()
 
                     # Вывод данных в консоль и отправка сигнала в интерфейс
-                    result = f"Датчик 0: {distance0} мм, Датчик 1: {distance1} мм"
+                    result = f"Порт 0: {distance0} мм, Порт 2: {distance2} мм"
                     print(result)
                     self.update_signal.emit(result)
                 except Exception as e:
